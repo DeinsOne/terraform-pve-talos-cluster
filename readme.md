@@ -79,6 +79,7 @@ machine:
 - [ ] add more examples
 - [ ] add [keep a changelog](https://keepachangelog.com/en/1.0.0/) document
 - [ ] add gh release
+- [ ] fined an alternative way to identify vm ip without required subnet specifying
 
 
 ## Requirements
