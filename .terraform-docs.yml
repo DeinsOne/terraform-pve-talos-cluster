@@ -1,0 +1,21 @@
+formatter: markdown table
+
+output:
+  file: readme.md
+  mode: replace
+  template: "{{ .Content }}"
+
+content: |-
+  {{ include "docs/header.md" }}
+
+
+  {{ .Requirements }}
+
+
+  {{ .Resources }}
+
+
+  {{ .Inputs }}
+
+
+  {{ .Outputs }}

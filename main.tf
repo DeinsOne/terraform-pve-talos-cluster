@@ -11,98 +11,43 @@ locals {
         type = machine-type
         name = instance-name
 
-        node = instance-config.node
-        tags = distinct(coalesce(instance-config.tags, var.defaults[machine-type].tags, []))
-        pool = coalesce(instance-config.pool, var.defaults[machine-type].pool, var.pool, "-1")
+        node = coalesce(instance-config.node, var.defaults[machine-type].node)
+        tags = distinct(coalesce(instance-config.tags, var.defaults[machine-type].tags))
+        pool = try(coalesce(instance-config.pool, var.defaults[machine-type].pool, var.pool), "")
 
-        image = coalesce(instance-config.image, var.defaults[machine-type].image, var.image, "-1")
+        image = coalesce(instance-config.image, var.defaults[machine-type].image, var.image)
 
-        cpu        = coalesce(instance-config.cpu, var.defaults[machine-type].cpu, 2)
-        cpu-type   = coalesce(instance-config.cpu-type, var.defaults[machine-type].cpu-type, "x86-64-v2")
-        memory-mb  = coalesce(instance-config.memory-mb, var.defaults[machine-type].memory-mb, 4096)
-        data-store = coalesce(instance-config.data-store, var.defaults[machine-type].data-store, "local-lvm")
-        disk-gb    = coalesce(instance-config.disk-gb, var.defaults[machine-type].disk-gb, 16)
-        network    = instance-config.network
+        cpu        = coalesce(instance-config.cpu, var.defaults[machine-type].cpu)
+        cpu-type   = coalesce(instance-config.cpu-type, var.defaults[machine-type].cpu-type)
+        memory-mb  = coalesce(instance-config.memory-mb, var.defaults[machine-type].memory-mb)
+        data-store = coalesce(instance-config.data-store, var.defaults[machine-type].data-store)
+        disk-gb    = coalesce(instance-config.disk-gb, var.defaults[machine-type].disk-gb)
 
-        machine-patch-template-path = coalesce(var.defaults[machine-type].machine-patch-template-path, "-1")
+        network = {
+          for key, _ in merge(var.defaults[machine-type].network, instance-config.network) :
+          key => try(
+            coalesce(try(instance-config.network[key], null), try(var.defaults[machine-type].network[key], null)),
+            null
+          )
+        }
+
+        args = {
+          for key, _ in merge(var.template-args, var.defaults[machine-type].template-args, instance-config.template-args) :
+          key => try(
+            coalesce(try(instance-config.network[key], null), try(var.defaults[machine-type].network[key], null), try(var.template-args[key], null)),
+            null
+          )
+        }
+
+        machine-patch-template-path = coalesce(var.defaults[machine-type].machine-patch-template-path)
       }
     ]
   ])
 
-
-  master-types = [
-    "master",
-    "masters",
-    "controlplane",
-    "controlplanes",
-    "control-plane",
-    "control-planes",
-    "cp",
-    "cps"
-  ]
-
   master-ips = [
-    for instance in local.instances : instance.network["address-ipv4"] if contains(local.master-types, instance.type)
+    for instance in local.instances : instance.network["address-ipv4"] if contains(var.control-plane-types, instance.type)
   ]
 }
-
-
-resource "talos_machine_secrets" "this" {
-  talos_version = var.version-talos
-}
-
-
-data "talos_machine_configuration" "master" {
-  cluster_name     = var.cluster-name
-  cluster_endpoint = "https://example.com:6443" # should be replaced by template file
-  machine_type     = "controlplane"
-  machine_secrets  = talos_machine_secrets.this.machine_secrets
-
-  talos_version      = var.version-talos
-  kubernetes_version = var.version-k8s
-}
-
-
-data "talos_machine_configuration" "worker" {
-  cluster_name     = var.cluster-name
-  cluster_endpoint = "https://example.com:6443" # should be replaced by template file
-  machine_type     = "worker"
-  machine_secrets  = talos_machine_secrets.this.machine_secrets
-
-  talos_version      = var.version-talos
-  kubernetes_version = var.version-k8s
-}
-
-
-data "talos_client_configuration" "this" {
-  cluster_name         = var.cluster-name
-  client_configuration = talos_machine_secrets.this.client_configuration
-  endpoints            = local.master-ips
-}
-
-
-
-resource "proxmox_virtual_environment_file" "instance-metadata" {
-  for_each = { for idx, instance in local.instances : instance.name => instance }
-
-  node_name    = each.value.node
-  content_type = "snippets"
-  datastore_id = "local"
-
-  source_raw {
-    data = <<-EOT
-      id: ${each.value.id}
-      zone: ${each.value.node}
-      region: ${var.region}
-      hostname: ${each.value.name}
-      providerID: "proxmox://${var.region}/${each.value.id}"
-      type: "${each.value.cpu}VCPU-${floor(each.value.memory-mb / 1024)}GB"
-    EOT
-
-    file_name = "${each.value.name}.metadata.yaml"
-  }
-}
-
 
 
 resource "proxmox_virtual_environment_vm" "instances" {
@@ -160,12 +105,6 @@ resource "proxmox_virtual_environment_vm" "instances" {
   }
 
 
-  initialization {
-    datastore_id      = each.value.data-store
-    meta_data_file_id = proxmox_virtual_environment_file.instance-metadata[each.key].id
-  }
-
-
   scsi_hardware = "virtio-scsi-single"
 
   disk {
@@ -206,11 +145,23 @@ resource "proxmox_virtual_environment_vm" "instances" {
 }
 
 
-resource "proxmox_virtual_environment_firewall_options" "instances" {
-  for_each = { for idx, instance in local.instances : instance.name => instance }
+locals {
+  instances-node = flatten([
+    for _, instance in local.instances : [
+      for node-name, vm in proxmox_virtual_environment_vm.instances : {
+        instance = instance
+        vm       = vm
+      } if vm.name == instance.name
+    ]
+  ])
+}
 
-  node_name = each.value.node
-  vm_id     = each.value.id
+
+resource "proxmox_virtual_environment_firewall_options" "instances" {
+  for_each = { for idx, instance in local.instances-node : instance.instance.name => instance }
+
+  node_name = each.value.instance.node
+  vm_id     = each.value.vm.id
   enabled   = false
 
   dhcp          = false
@@ -222,38 +173,52 @@ resource "proxmox_virtual_environment_firewall_options" "instances" {
   input_policy  = "DROP"
   output_policy = "ACCEPT"
   radv          = true
-
-  depends_on = [proxmox_virtual_environment_vm.instances]
 }
 
 
+resource "talos_machine_secrets" "this" {
+  talos_version = var.version-talos
+}
 
-locals {
-  instances-node = flatten([
-    for _, instance in local.instances : [
-      for node-name, node in proxmox_virtual_environment_vm.instances : {
-        node     = node
-        instance = instance
-      } if node.name == instance.name
-    ]
-  ])
+
+data "talos_machine_configuration" "master" {
+  cluster_name     = var.cluster-name
+  cluster_endpoint = "https://example.com:6443" # should be replaced by template file
+  machine_type     = "controlplane"
+  machine_secrets  = talos_machine_secrets.this.machine_secrets
+
+  talos_version      = var.version-talos
+  kubernetes_version = var.version-k8s
+}
+
+
+data "talos_machine_configuration" "worker" {
+  cluster_name     = var.cluster-name
+  cluster_endpoint = "https://example.com:6443" # should be replaced by template file
+  machine_type     = "worker"
+  machine_secrets  = talos_machine_secrets.this.machine_secrets
+
+  talos_version      = var.version-talos
+  kubernetes_version = var.version-k8s
+}
+
+
+data "talos_client_configuration" "this" {
+  cluster_name         = var.cluster-name
+  client_configuration = talos_machine_secrets.this.client_configuration
+  endpoints            = local.master-ips
 }
 
 
 resource "talos_machine_configuration_apply" "this" {
   for_each = { for idx, instance in local.instances-node : instance.instance.name => instance }
 
-  node                        = [for ip in flatten(each.value.node.ipv4_addresses) : ip if cidrhost(var.subnet, 0) == cidrhost("${ip}/${substr(var.subnet, -2, 2)}", 0)][0]
+  node                        = [for ip in flatten(each.value.vm.ipv4_addresses) : ip if cidrhost(var.subnet, 0) == cidrhost("${ip}/${substr(var.subnet, -2, 2)}", 0)][0]
   client_configuration        = talos_machine_secrets.this.client_configuration
-  machine_configuration_input = contains(local.master-types, each.value.instance.type) ? data.talos_machine_configuration.master.machine_configuration : data.talos_machine_configuration.worker.machine_configuration
+  machine_configuration_input = contains(var.control-plane-types, each.value.instance.type) ? data.talos_machine_configuration.master.machine_configuration : data.talos_machine_configuration.worker.machine_configuration
 
   config_patches = [
-    templatefile("${each.value.instance.machine-patch-template-path}", merge(each.value.instance, {
-      zone   = each.value.instance.node
-      region = var.region
-
-      args = var.template-args
-    }))
+    templatefile("${each.value.instance.machine-patch-template-path}", each.value.instance)
   ]
 
   depends_on = [proxmox_virtual_environment_vm.instances]

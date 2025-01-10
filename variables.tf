@@ -1,105 +1,123 @@
-
-variable "region" {
-  description = "Region of a cluster, used for topology aware routing and csi. Can be name of a pve cluster or rack, or location"
-  type        = string
-}
-
-
 variable "subnet" {
-  description = "A subnet cluster nodes are to belong to"
+  description = "(required) a subnet cluster nodes are to belong to, should be /24 network covering ips of vms, is required to correctly select node ip to apply machine configs"
   type        = string
 }
 
 
 variable "pool" {
-  description = "Pve pool id to add instances to"
+  description = "(optional) pve pool id to add instances to, can be specified or overwritten either in pool, or defaults, or instances"
   type        = string
   default     = null
 }
 
 
 variable "cluster-name" {
-  description = "Name of talos k8s cluster in talosconfig"
+  description = "(required) name of talos k8s cluster"
   type        = string
 }
 
 
 variable "image" {
-  description = "Talos os image pve path including data store"
-  default     = "pve-images:iso/talos-1.9.1-metal-amd64-base.img"
+  description = "(optional) default talos os image pve path including data store, must be specified either in image, or defaults, or instances, e.g `pve-images:iso/talos-1.9.1-metal-amd64.img`"
   type        = string
+  default     = null
 }
 
 
 variable "version-talos" {
-  type     = string
-  nullable = true
-  default  = null
+  description = "(optional) version of talos installer image to use"
+  type        = string
+  nullable    = true
+  default     = null
 }
 
 
 variable "version-k8s" {
-  type     = string
-  nullable = true
-  default  = null
+  description = "(optional) version of k8s components images to use, can be overwritten per machine patch"
+  type        = string
+  nullable    = true
+  default     = null
 }
 
 
 variable "template-args" {
-  description = "Template args allow to pass additional arguments to a template, they can be accessed as { args._ }"
+  description = "(optional) template args allow to pass additional arguments to a template, they can be accessed as `{ args._ }`, is merged with values form defaults and instances"
   type        = map(any)
+  sensitive   = true
   default     = {}
 }
 
 
 variable "defaults" {
-  description = "The object providing configuration defaults for instances by instance type"
-  sensitive   = false
-  default     = {}
+  description = "(required) the object providing configuration defaults for cluster nodes by instance type, can be used to set configuration to node groups"
   type = map(object({
     node : optional(string)
-    tags : optional(list(string))
     pool : optional(string)
+    tags : optional(list(string), [])
 
     image : optional(string)
 
-    # refer to https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_vm#type
-    cpu : optional(number)        # 2
-    cpu-type : optional(string)   # x86-64-v2
-    memory-mb : optional(number)  # 4096
-    data-store : optional(string) # local-lvm
-    disk-gb : optional(number)    # 16
+    cpu : optional(number, 2)
+    cpu-type : optional(string, "x86-64-v2")
+    memory-mb : optional(number, 4096)
+    data-store : optional(string, "local-lvm")
+    disk-gb : optional(number, 16)
 
-    # (required) the path should be relative to main terraform dir
+    network : optional(object({
+      interface : optional(string)
+      gateway-ipv4 : optional(string)
+      vlan : optional(number)
+    }))
+
+    template-args : optional(map(any))
     machine-patch-template-path : string
   }))
 }
 
 
 variable "instances" {
-  description = "The object providing individual instances configurations by type, by instance name. Can override defaults"
-  sensitive   = false
+  description = "(optional) the object providing individual instances configurations by type, by instance name. Can override defaults, complex props are merged"
   default     = {}
+  nullable    = true
   type = map(
     map(object({
       id : optional(number)
-      node : string
+      node : optional(string)
       tags : optional(list(string))
       pool : optional(string)
 
       image : optional(string)
 
-      cpu : optional(number)        # 2
-      cpu-type : optional(string)   # x86-64-v2
-      memory-mb : optional(number)  # 4096
-      data-store : optional(string) # local-lvm
-      disk-gb : optional(number)    # 16
+      cpu : optional(number)
+      cpu-type : optional(string)
+      memory-mb : optional(number)
+      data-store : optional(string)
+      disk-gb : optional(number)
 
       network : object({
-        interface : string
+        interface : optional(string)
         address-ipv4 : string
         gateway-ipv4 : optional(string)
+        vlan : optional(number)
       })
+
+      template-args : optional(map(any))
     }))
   )
+}
+
+
+variable "control-plane-types" {
+  description = "(optional) an instance of type from the list is considered a control plane node thus gets control plane machine config applied, others get worker node machine config"
+  type        = list(string)
+  default = [
+    "cp",
+    "cps",
+    "controlplane",
+    "controlplanes",
+    "control-plane",
+    "control-planes",
+    "master",
+    "masters"
+  ]
 }
