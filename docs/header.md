@@ -1,6 +1,6 @@
 # Proxmox talos cluster module
 
-This module allows to declaratively create talos k8s cluster running inside Proxmox VE. Flexible configuration allows to overwrite parameters at multiple levels of setup givin fine grained modification controls. It creates vms, applies pve firewall rules, applies machine configs with patches and bootstraps a cluster.
+This module allows to declaratively create talos k8s cluster running inside Proxmox VE. Flexible configuration allows to overwrite parameters at multiple levels of setup giving fine grained modification controls. It creates vms, applies pve firewall rules, applies machine configs with patches and bootstraps a cluster.
 
 
 ## Usage
@@ -69,3 +69,12 @@ machine:
       - ${network.gateway-ipv4}
   ...
 ```
+
+
+## Todo
+
+- [ ] allow to specify storage drives array
+- [ ] allow to specify network interfaces array
+- [ ] allow to specify passthrough pcie devices array
+- [ ] add more examples
+- [ ] add gh release
