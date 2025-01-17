@@ -233,6 +233,10 @@ resource "talos_machine_bootstrap" "this" {
 
   client_configuration = talos_machine_secrets.this.client_configuration
   node                 = local.master-ips[0]
+
+  timeouts = {
+    create = "120m"
+  }
 }
 
 
@@ -241,4 +245,9 @@ resource "talos_cluster_kubeconfig" "this" {
   client_configuration         = talos_machine_secrets.this.client_configuration
   node                         = local.master-ips[0]
   certificate_renewal_duration = "24h"
+
+  timeouts = {
+    create = "120m"
+    update = "120m"
+  }
 }
