@@ -10,6 +10,7 @@ locals {
         id   = instance-config.id
         type = machine-type
         name = instance-name
+        note = try(coalesce(instance-config.note, var.defaults[machine-type].note), "")
 
         node = coalesce(instance-config.node, var.defaults[machine-type].node)
         tags = distinct(coalesce(instance-config.tags, var.defaults[machine-type].tags))
@@ -53,11 +54,12 @@ locals {
 resource "proxmox_virtual_environment_vm" "instances" {
   for_each = { for idx, instance in local.instances : instance.name => instance }
 
-  name      = each.value.name
-  vm_id     = each.value.id
-  node_name = each.value.node
-  tags      = each.value.tags
-  pool_id   = each.value.pool
+  name        = each.value.name
+  vm_id       = each.value.id
+  node_name   = each.value.node
+  tags        = each.value.tags
+  pool_id     = each.value.pool
+  description = each.value.note
 
 
   started = true
@@ -83,16 +85,16 @@ resource "proxmox_virtual_environment_vm" "instances" {
     type  = each.value.cpu-type
     flags = [
       "+aes",
-      # "+pdpe1gb",
+      "+pdpe1gb",
     ]
-    numa = true
+    numa = true # is required for hugepages
   }
 
 
   memory {
     dedicated = each.value.memory-mb
-    # hugepages = "1024"
-    hugepages = "2"
+    # hugepages = "2"
+    hugepages = "1024"
   }
 
 

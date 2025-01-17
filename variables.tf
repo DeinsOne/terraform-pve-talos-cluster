@@ -54,6 +54,7 @@ variable "defaults" {
     node : optional(string)
     pool : optional(string)
     tags : optional(list(string), [])
+    note : optional(string)
 
     image : optional(string)
 
@@ -85,6 +86,7 @@ variable "instances" {
       node : optional(string)
       tags : optional(list(string))
       pool : optional(string)
+      note : optional(string)
 
       image : optional(string)
 
