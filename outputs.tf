@@ -34,7 +34,7 @@ output "version-k8s" {
 }
 
 
-output "talosconfig" {
+output "talosconfig_raw" {
   description = "raw talosconfig file of a provisioned cluster"
   value       = data.talos_client_configuration.this.talos_config
   sensitive   = true

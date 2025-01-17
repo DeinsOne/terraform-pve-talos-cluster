@@ -186,7 +186,7 @@ resource "talos_machine_secrets" "this" {
 
 data "talos_machine_configuration" "master" {
   cluster_name     = var.cluster-name
-  cluster_endpoint = "https://example.com:6443" # should be replaced by template file
+  cluster_endpoint = "https://${var.cluster-endpoint}:6443"
   machine_type     = "controlplane"
   machine_secrets  = talos_machine_secrets.this.machine_secrets
 
@@ -197,7 +197,7 @@ data "talos_machine_configuration" "master" {
 
 data "talos_machine_configuration" "worker" {
   cluster_name     = var.cluster-name
-  cluster_endpoint = "https://example.com:6443" # should be replaced by template file
+  cluster_endpoint = "https://${var.cluster-endpoint}:6443"
   machine_type     = "worker"
   machine_secrets  = talos_machine_secrets.this.machine_secrets
 
@@ -244,7 +244,6 @@ resource "talos_cluster_kubeconfig" "this" {
   depends_on                   = [talos_machine_bootstrap.this]
   client_configuration         = talos_machine_secrets.this.client_configuration
   node                         = local.master-ips[0]
-  certificate_renewal_duration = "24h"
 
   timeouts = {
     create = "120m"

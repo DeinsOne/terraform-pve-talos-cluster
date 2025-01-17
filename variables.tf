@@ -40,6 +40,12 @@ variable "version-k8s" {
 }
 
 
+variable "cluster-endpoint" {
+  description = "(required) cluster endpoint represents domain with records pointing control plane nodes `https://{{example.com}}:6443`"
+  type        = string
+}
+
+
 variable "template-args" {
   description = "(optional) template args allow to pass additional arguments to a template, they can be accessed as `{ args._ }`, is merged with values form defaults and instances"
   type        = map(any)

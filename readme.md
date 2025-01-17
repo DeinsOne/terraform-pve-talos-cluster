@@ -108,6 +108,7 @@ machine:
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_cluster-endpoint"></a> [cluster-endpoint](#input\_cluster-endpoint) | (required) cluster endpoint represents domain with records pointing control plane nodes `https://{{example.com}}:6443` | `string` | n/a | yes |
 | <a name="input_cluster-name"></a> [cluster-name](#input\_cluster-name) | (required) name of talos k8s cluster | `string` | n/a | yes |
 | <a name="input_control-plane-types"></a> [control-plane-types](#input\_control-plane-types) | (optional) an instance of type from the list is considered a control plane node thus gets control plane machine config applied, others get worker node machine config | `list(string)` | <pre>[<br/>  "cp",<br/>  "cps",<br/>  "controlplane",<br/>  "controlplanes",<br/>  "control-plane",<br/>  "control-planes",<br/>  "master",<br/>  "masters"<br/>]</pre> | no |
 | <a name="input_defaults"></a> [defaults](#input\_defaults) | (required) the object providing configuration defaults for cluster nodes by instance type, can be used to set configuration to node groups | <pre>map(object({<br/>    node : optional(string)<br/>    pool : optional(string)<br/>    tags : optional(list(string), [])<br/>    note : optional(string)<br/><br/>    image : optional(string)<br/><br/>    cpu : optional(number, 2)<br/>    cpu-type : optional(string, "x86-64-v2")<br/>    memory-mb : optional(number, 4096)<br/>    memory-hugepage-mb : optional(number, 0)<br/>    data-store : optional(string, "local-lvm")<br/>    disk-gb : optional(number, 16)<br/><br/>    network : optional(object({<br/>      interface : optional(string)<br/>      gateway-ipv4 : optional(string)<br/>      vlan : optional(number)<br/>    }))<br/><br/>    template-args : optional(map(any))<br/>    machine-patch-template-path : string<br/>  }))</pre> | n/a | yes |
@@ -131,7 +132,7 @@ machine:
 | <a name="output_kubeconfig"></a> [kubeconfig](#output\_kubeconfig) | kubeconfig collection as returned by talos kubeconfig provider of a provisioned cluster |
 | <a name="output_pool"></a> [pool](#output\_pool) | pve pool id instances are added to |
 | <a name="output_subnet"></a> [subnet](#output\_subnet) | a subnet cluster nodes are to belong to, should be /24 network covering ips of vms, is required to correctly select node ip to apply machine configs |
-| <a name="output_talosconfig"></a> [talosconfig](#output\_talosconfig) | raw talosconfig file of a provisioned cluster |
+| <a name="output_talosconfig_raw"></a> [talosconfig\_raw](#output\_talosconfig\_raw) | raw talosconfig file of a provisioned cluster |
 | <a name="output_template-args"></a> [template-args](#output\_template-args) | default template arguments passed to machine config patches |
 | <a name="output_version-k8s"></a> [version-k8s](#output\_version-k8s) | default version of k8s components images used |
 | <a name="output_version-talos"></a> [version-talos](#output\_version-talos) | version of talos installer image to use |
