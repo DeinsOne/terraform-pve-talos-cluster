@@ -77,5 +77,4 @@ machine:
 - [ ] allow to specify network interfaces array
 - [ ] allow to specify passthrough pcie devices array
 - [ ] add more examples
-- [ ] add [keep a changelog](https://keepachangelog.com/en/1.0.0/) document
 - [ ] fined an alternative way to identify vm ip without required subnet specifying

@@ -61,6 +61,7 @@ variable "defaults" {
     cpu : optional(number, 2)
     cpu-type : optional(string, "x86-64-v2")
     memory-mb : optional(number, 4096)
+    memory-hugepage-mb : optional(number, 0)
     data-store : optional(string, "local-lvm")
     disk-gb : optional(number, 16)
 
@@ -93,6 +94,7 @@ variable "instances" {
       cpu : optional(number)
       cpu-type : optional(string)
       memory-mb : optional(number)
+      memory-hugepage-mb : optional(number)
       data-store : optional(string)
       disk-gb : optional(number)
 

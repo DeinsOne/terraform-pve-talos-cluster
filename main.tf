@@ -18,11 +18,12 @@ locals {
 
         image = coalesce(instance-config.image, var.defaults[machine-type].image, var.image)
 
-        cpu        = coalesce(instance-config.cpu, var.defaults[machine-type].cpu)
-        cpu-type   = coalesce(instance-config.cpu-type, var.defaults[machine-type].cpu-type)
-        memory-mb  = coalesce(instance-config.memory-mb, var.defaults[machine-type].memory-mb)
-        data-store = coalesce(instance-config.data-store, var.defaults[machine-type].data-store)
-        disk-gb    = coalesce(instance-config.disk-gb, var.defaults[machine-type].disk-gb)
+        cpu                = coalesce(instance-config.cpu, var.defaults[machine-type].cpu)
+        cpu-type           = coalesce(instance-config.cpu-type, var.defaults[machine-type].cpu-type)
+        memory-mb          = coalesce(instance-config.memory-mb, var.defaults[machine-type].memory-mb)
+        memory-hugepage-mb = coalesce(instance-config.memory-hugepage-mb, var.defaults[machine-type].memory-hugepage-mb)
+        data-store         = coalesce(instance-config.data-store, var.defaults[machine-type].data-store)
+        disk-gb            = coalesce(instance-config.disk-gb, var.defaults[machine-type].disk-gb)
 
         network = {
           for key, _ in merge(var.defaults[machine-type].network, instance-config.network) :
@@ -85,16 +86,16 @@ resource "proxmox_virtual_environment_vm" "instances" {
     type  = each.value.cpu-type
     flags = [
       "+aes",
-      "+pdpe1gb",
+      each.value.memory-hugepage-mb == 1024 ? "+pdpe1gb" : null,
     ]
-    numa = true # is required for hugepages
+    # numa is required for hugepages capability
+    numa = each.value.memory-hugepage-mb > 0 ? true : false
   }
 
 
   memory {
     dedicated = each.value.memory-mb
-    # hugepages = "2"
-    hugepages = "1024"
+    hugepages = each.value.memory-hugepage-mb > 0 ? "${each.value.memory-hugepage-mb}" : null
   }
 
 
