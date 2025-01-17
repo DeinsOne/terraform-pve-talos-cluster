@@ -42,8 +42,8 @@ output "talosconfig" {
 
 
 output "kubeconfig" {
-  description = "raw admin kubeconfig file of a provisioned cluster"
-  value       = talos_cluster_kubeconfig.this.kubeconfig_raw
+  description = "kubeconfig collection as returned by talos kubeconfig provider of a provisioned cluster"
+  value       = talos_cluster_kubeconfig.this
   sensitive   = true
 }
 

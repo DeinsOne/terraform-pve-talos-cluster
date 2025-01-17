@@ -128,7 +128,7 @@ machine:
 | <a name="output_control-plane-types"></a> [control-plane-types](#output\_control-plane-types) | types of control planes |
 | <a name="output_image"></a> [image](#output\_image) | default talos os image |
 | <a name="output_instances"></a> [instances](#output\_instances) | snapshot of desired vms configurations, including overrides merged, includes sensitive template args |
-| <a name="output_kubeconfig"></a> [kubeconfig](#output\_kubeconfig) | raw admin kubeconfig file of a provisioned cluster |
+| <a name="output_kubeconfig"></a> [kubeconfig](#output\_kubeconfig) | kubeconfig collection as returned by talos kubeconfig provider of a provisioned cluster |
 | <a name="output_pool"></a> [pool](#output\_pool) | pve pool id instances are added to |
 | <a name="output_subnet"></a> [subnet](#output\_subnet) | a subnet cluster nodes are to belong to, should be /24 network covering ips of vms, is required to correctly select node ip to apply machine configs |
 | <a name="output_talosconfig"></a> [talosconfig](#output\_talosconfig) | raw talosconfig file of a provisioned cluster |
